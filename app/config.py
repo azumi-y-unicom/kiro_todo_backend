@@ -44,6 +44,7 @@ class Settings(BaseSettings):
     - **updated_at**: Last update timestamp (auto-updated)
     """
     debug: bool = False
+    environment: str = "development"
     
     # サーバー設定
     host: str = "0.0.0.0"
@@ -113,7 +114,7 @@ class Settings(BaseSettings):
         Returns:
             bool: 本番環境の場合True
         """
-        return not self.debug and os.getenv("ENVIRONMENT", "").lower() == "production"
+        return not self.debug and self.environment.lower() == "production"
 
 
 # グローバル設定インスタンス

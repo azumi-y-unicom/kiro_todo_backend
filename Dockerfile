@@ -50,13 +50,17 @@ WORKDIR /app
 
 # Copy application code with proper ownership
 COPY --chown=appuser:appgroup app/ ./app/
+COPY --chown=appuser:appgroup alembic/ ./alembic/
+COPY --chown=appuser:appgroup scripts/ ./scripts/
+COPY --chown=appuser:appgroup alembic.ini ./
 
 # Switch to non-root user
 USER appuser
 
 # Create necessary directories with proper permissions
 RUN mkdir -p /app/logs && \
-    chmod 755 /app/logs
+    chmod 755 /app/logs && \
+    chmod +x /app/scripts/docker-entrypoint.sh
 
 # Expose port
 EXPOSE 8000
@@ -70,6 +74,9 @@ LABEL maintainer="todo-api-backend" \
 # Health check with improved configuration
 HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
     CMD curl -f http://localhost:8000/health || exit 1
+
+# Set entrypoint to run migrations before starting the app
+ENTRYPOINT ["/app/scripts/docker-entrypoint.sh"]
 
 # Run the application with security-focused settings
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "1", "--access-log"]

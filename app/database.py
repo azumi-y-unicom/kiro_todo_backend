@@ -77,11 +77,13 @@ def create_tables():
     """
     データベーステーブルを作成する
     
-    アプリケーション起動時に呼び出される。
+    注意: 本番環境ではAlembicマイグレーションを使用することを推奨。
+    この関数は開発・テスト環境でのみ使用する。
     """
     try:
         Base.metadata.create_all(bind=engine)
         logger.info("Database tables created successfully")
+        logger.warning("create_tables() is deprecated. Use Alembic migrations instead.")
     except Exception as e:
         logger.error(f"Failed to create database tables: {e}")
         raise
