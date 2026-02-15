@@ -1,17 +1,29 @@
-# Docker Compose override for development environment
-# This file is automatically loaded by docker-compose and overrides settings in docker-compose.yml
-
 version: '3.8'
+
+# 開発環境用のオーバーライド設定
+# docker-compose up 実行時に自動的に適用される
 
 services:
   app:
+    build:
+      target: production
+    volumes:
+      # 開発時のホットリロード用（オプション）
+      - ./app:/app/app:ro
+      - ./alembic:/app/alembic:ro
+      - ./scripts:/app/scripts:ro
+      - ./alembic.ini:/app/alembic.ini:ro
     environment:
       - DEBUG=true
       - ENVIRONMENT=development
       - LOG_LEVEL=DEBUG
+      - SKIP_MIGRATIONS=false
+      - CREATE_SAMPLE_DATA=true
       - RELOAD=true
+    command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload", "--log-level", "debug"]
+
+  db:
+    # 開発環境では初期化スクリプトをマウント
     volumes:
-      # Mount source code for development (hot reload)
-      - ./app:/app/app:ro
-      # Mount tests for development
-      - ./tests:/app/tests:ro
+      - postgres_data:/var/lib/postgresql/data
+      - ./db/init:/docker-entrypoint-initdb.d:ro

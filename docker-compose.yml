@@ -17,6 +17,8 @@ services:
       - HOST=0.0.0.0
       - PORT=8000
       - LOG_LEVEL=INFO
+      - SKIP_MIGRATIONS=false
+      - CREATE_SAMPLE_DATA=true
     volumes:
       - app_logs:/app/logs
     depends_on:
