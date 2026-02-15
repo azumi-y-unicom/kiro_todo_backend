@@ -65,7 +65,12 @@ CREATE_SAMPLE_DATA=false docker-compose up -d
 echo "SKIP_MIGRATIONS=false" >> .env
 echo "CREATE_SAMPLE_DATA=true" >> .env
 docker-compose up -d
-```
+=======
+# 本番用設定で起動
+docker-compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+
+# または完全版で起動
+docker-compose -f docker-compose.full.yml up -d
 
 ### 3. データベース管理
 - **Adminer**: http://localhost:8080
@@ -107,7 +112,10 @@ docker-compose exec app alembic current
 
 # サンプルデータを手動作成
 docker-compose exec app python scripts/init_db.py
-```
+=======
+# ボリュームを削除して完全にリセット
+docker-compose down -v
+docker-compose up -d
 
 ### ログの確認
 ```bash
