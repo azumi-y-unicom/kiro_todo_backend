@@ -10,8 +10,8 @@ ALTER DATABASE todoapp SET client_encoding TO 'UTF8';
 ALTER DATABASE todoapp SET lc_collate TO 'C';
 ALTER DATABASE todoapp SET lc_ctype TO 'en_US.utf8';
 
--- Create indexes for better performance (these will be created by SQLAlchemy as well)
--- But we can add additional performance indexes here if needed
+-- Note: Table creation and indexes are now managed by Alembic migrations
+-- This script only handles database-level configuration and extensions
 
 -- Set default timezone
 SET timezone = 'UTC';

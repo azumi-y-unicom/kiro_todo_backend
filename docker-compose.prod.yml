@@ -1,61 +1,54 @@
-# Docker Compose configuration for production environment
-# Use with: docker-compose -f docker-compose.yml -f docker-compose.prod.yml up
-
 version: '3.8'
+
+# 本番環境用のDocker Compose設定
+# 使用方法: docker-compose -f docker-compose.yml -f docker-compose.prod.yml up -d
 
 services:
   app:
+    build:
+      target: production
     environment:
-      # Production-specific settings
       - DEBUG=false
       - ENVIRONMENT=production
       - LOG_LEVEL=WARNING
-      - RELOAD=false
-      # Security settings
-      - CORS_ORIGINS=["https://yourdomain.com"]
-    # Remove development volumes
-    volumes:
-      - app_logs:/app/logs
-      - ./config:/app/config:ro
-    # Production resource limits
+      - SKIP_MIGRATIONS=false
+      - CREATE_SAMPLE_DATA=false
     deploy:
       resources:
         limits:
+          cpus: '1.0'
           memory: 512M
-          cpus: '0.5'
         reservations:
+          cpus: '0.5'
           memory: 256M
-          cpus: '0.25'
       restart_policy:
         condition: on-failure
         delay: 5s
         max_attempts: 3
-        window: 120s
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 60s
 
   db:
     environment:
-      # Production PostgreSQL settings
-      - POSTGRES_SHARED_BUFFERS=512MB
-      - POSTGRES_EFFECTIVE_CACHE_SIZE=2GB
-      - POSTGRES_MAINTENANCE_WORK_MEM=128MB
-    # Don't expose PostgreSQL port in production
-    ports: []
-    # Production resource limits
+      - POSTGRES_USER=todouser
+      - POSTGRES_PASSWORD=${DB_PASSWORD:-todopass}
+      - POSTGRES_DB=todoapp
     deploy:
       resources:
         limits:
-          memory: 2G
           cpus: '1.0'
-        reservations:
           memory: 1G
+        reservations:
           cpus: '0.5'
-      restart_policy:
-        condition: on-failure
-        delay: 5s
-        max_attempts: 3
-        window: 120s
-
-  # Remove adminer in production
+          memory: 512M
+    # 本番環境ではポートを公開しない
+    ports: []
+    
+  # 本番環境ではAdminerを無効化
   adminer:
     profiles:
-      - never
+      - debug
