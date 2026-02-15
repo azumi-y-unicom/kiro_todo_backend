@@ -1,0 +1,106 @@
+@startuml update_todo
+title ToDoアイテム更新シーケンス
+
+actor Client as C
+participant "FastAPI\n(Router)" as API
+participant "TodoService\n(Business Logic)" as Service
+participant "TodoRepository\n(Data Access)" as Repo
+database "PostgreSQL\n(Database)" as DB
+
+C -> API: PUT /todos/{id}\n{title?, description?, completed?}
+activate API
+
+API -> API: パスパラメータ検証\n(id: int)
+API -> API: リクエストボディ検証\n(TodoUpdate schema)
+note right: 部分更新\n全フィールドはオプション
+
+API -> Service: update_todo(todo_id, update_data)
+activate Service
+
+Service -> Repo: get_by_id(todo_id)
+activate Repo
+Repo -> DB: SELECT * FROM todos\nWHERE id = todo_id
+activate DB
+DB --> Repo: 既存ToDoレコード
+deactivate DB
+Repo --> Service: TodoModel
+deactivate Repo
+
+Service -> Service: ビジネスロジック検証\n& データマージ
+note right: 既存データと更新データを\nマージして検証
+
+Service -> Repo: update(todo_id, merged_data)
+activate Repo
+
+Repo -> DB: UPDATE todos SET\ntitle=?, description=?, completed=?, updated_at=NOW()\nWHERE id = todo_id
+activate DB
+DB --> Repo: 更新されたToDoレコード
+deactivate DB
+
+Repo --> Service: TodoModel
+deactivate Repo
+
+Service --> API: TodoModel
+deactivate Service
+
+API -> API: レスポンスシリアライゼーション\n(TodoResponse schema)
+API --> C: 200 OK\n(id, title, description, completed, created_at, updated_at)
+deactivate API
+
+note over C, DB: 正常系: ToDoアイテムが正常に更新される
+
+== ToDoが見つからないケース ==
+
+C -> API: PUT /todos/non_existent_id\nupdate_data
+activate API
+API -> Service: update_todo(non_existent_id, update_data)
+activate Service
+Service -> Repo: get_by_id(non_existent_id)
+activate Repo
+Repo -> DB: SELECT query
+activate DB
+DB --> Repo: None (レコードなし)
+deactivate DB
+Repo --> Service: None
+deactivate Repo
+Service --> API: HTTPException(404)
+deactivate Service
+API --> C: 404 Not Found\n"detail: Todo not found"
+deactivate API
+
+== バリデーションエラーケース ==
+
+C -> API: PUT /todos/id\ninvalid_data
+activate API
+API -> API: リクエスト検証エラー
+API --> C: 422 Unprocessable Entity\nvalidation errors
+deactivate API
+
+== データベースエラーケース ==
+
+C -> API: PUT /todos/id\nvalid_data
+activate API
+API -> Service: update_todo(todo_id, update_data)
+activate Service
+Service -> Repo: get_by_id(todo_id)
+activate Repo
+Repo -> DB: SELECT query
+activate DB
+DB --> Repo: TodoModel
+deactivate DB
+Repo --> Service: TodoModel
+deactivate Repo
+Service -> Repo: update(todo_id, merged_data)
+activate Repo
+Repo -> DB: UPDATE query
+activate DB
+DB --> Repo: データベースエラー
+deactivate DB
+Repo --> Service: Exception
+deactivate Repo
+Service --> API: Exception
+deactivate Service
+API --> C: 500 Internal Server Error\nerror message
+deactivate API
+
+@enduml
